@@ -1,5 +1,13 @@
-# vinyl_vault
-+-----------------------------------------------------------+
+# Vinyl Vault
+
+A cloud-native web application for cataloging music albums, built with **FastAPI**, **PostgreSQL**, and **Supabase Storage**.
+
+---
+
+## Architecture Diagram
+
+```text
+       +-----------------------------------------------------------+
        |                  Web Application (Browser)                |
        |  - index.html single-page UI                              |
        |  - Dynamic glowing cards & interactive CRUD gallery       |
