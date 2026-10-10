@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vinyl Vault</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1b1f2e;
+    --panel: #242a3d;
+    --line: #3a4260;
+    --text: #eef0f6;
+    --muted: #9aa3bf;
+    --paper: #f2e3b3;
+    --paper-ink: #2a2412;
+    --danger: #ff8a7a;
+    --display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+    --body: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { color-scheme: dark; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  :focus-visible { outline: 2px solid var(--paper); outline-offset: 3px; }
+
+  /* ---------- header ---------- */
+  .top {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 24px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 16px 24px;
+  }
+  .brand {
+    margin: 0;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(48px, 9vw, 88px);
+    line-height: .9;
+    letter-spacing: -0.01em;
+  }
+  .count { margin: 0 0 8px; color: var(--muted); }
+  .tools { margin-left: auto; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+  .search input {
+    width: 240px;
+    max-width: 100%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--text);
+    font: inherit;
+  }
+  .search input::placeholder { color: var(--muted); }
+
+  .btn {
+    font: inherit;
+    font-weight: 600;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+  }
+  .btn.primary { background: var(--paper); color: var(--paper-ink); }
+  .btn.primary:hover { filter: brightness(1.06); }
+  .btn.primary:disabled { opacity: .6; cursor: progress; }
+  .btn.ghost { background: transparent; color: var(--text); border-color: var(--line); }
+  .btn.ghost:hover { border-color: var(--muted); }
+
+  /* ---------- product-style cards ---------- */
+  main { max-width: 1200px; margin: 0 auto; padding: 24px 24px 96px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 24px;
+    padding-top: 16px;
+  }
+
+  /* The card's background is the cover's dominant colour (set from JS as --card-bg),
+     and its text colour (--card-fg) is chosen for readable contrast on that colour. */
+  .card {
+    --card-bg: #333333;
+    --card-fg: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 20px 20px 18px;
+    border-radius: 12px;
+    background: var(--card-bg);
+    color: var(--card-fg);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 8px 24px -10px rgba(0, 0, 0, .6);
+    transition: background-color .7s ease, color .7s ease, box-shadow .2s ease, transform .2s ease;
+    min-width: 0;
+  }
+  .card:hover { box-shadow: 0 2px 4px rgba(0, 0, 0, .35), 0 16px 32px -10px rgba(0, 0, 0, .7); transform: translateY(-2px); }
+
+  .cover {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, .25);
+    box-shadow: 0 6px 16px -6px rgba(0, 0, 0, .55);
+  }
+  .nocover { display: grid; place-items: center; font-size: 14px; opacity: .8; }
+
+  .title {
+    margin: 16px 0 0;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 28px;
+    line-height: 1.05;
+    overflow-wrap: anywhere;
+  }
+  .facts {
+    margin: 6px 0 0;
+    font-size: 14px;
+    opacity: .85;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px 10px;
+    align-items: center;
+  }
+  .badge {
+    /* inverted pill: always readable because it swaps the card's own two colours */
+    background: var(--card-fg);
+    color: var(--card-bg);
+    font-weight: 600;
+    font-size: 12px;
+    padding: 0 7px;
+    border-radius: 3px;
+    opacity: 1;
+  }
+  .chips { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+  .chips li {
+    font-size: 13px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    border: 1px solid currentColor;                         /* fallback */
+    border: 1px solid color-mix(in srgb, currentColor 45%, transparent);
+    background: color-mix(in srgb, currentColor 12%, transparent);
+  }
+  .pending { margin: 10px 0 0; font-size: 13px; opacity: .75; }
+
+  .row-actions {
+    margin-top: auto;                 /* pins the buttons to the bottom so cards in a row line up */
+    padding-top: 16px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    width: 100%;
+  }
+  .link {
+    font: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 2px 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+    cursor: pointer;
+  }
+  .link:hover { text-decoration-color: currentColor; }
+  .card :focus-visible { outline-color: currentColor; }
+
+  /* ---------- empty / error ---------- */
+  .status {
+    max-width: 520px;
+    margin: 48px 0;
+    padding: 24px;
+    border-radius: 14px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+  }
+  .status h2 { margin: 0 0 8px; font-family: var(--display); font-size: 30px; font-weight: 600; }
+  .status p { margin: 0 0 16px; color: var(--muted); }
+  .status code { background: var(--bg); padding: 2px 6px; border-radius: 4px; color: var(--text); }
+
+  /* ---------- dialog ---------- */
+  dialog {
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--panel);
+    color: var(--text);
+    width: min(480px, calc(100vw - 32px));
+  }
+  dialog::backdrop { background: rgba(10, 12, 20, .72); backdrop-filter: blur(3px); }
+  dialog[open] { animation: pop .18s ease-out; }
+  @keyframes pop { from { transform: translateY(8px) scale(.98); opacity: 0; } to { transform: none; opacity: 1; } }
+  form { padding: 24px; display: grid; gap: 16px; }
+  form h2 { margin: 0; font-family: var(--display); font-size: 34px; font-weight: 600; line-height: 1; }
+  .field { display: grid; gap: 6px; }
+  .field label { font-weight: 500; font-size: 14px; }
+  .field small { color: var(--muted); }
+  .field input[type="text"], .field input[type="number"] {
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+    width: 100%;
+  }
+  .field input[type="file"] { color: var(--muted); font: inherit; font-size: 14px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: end; }
+  .check { display: flex; gap: 10px; align-items: center; padding-bottom: 10px; }
+  .check input { width: 18px; height: 18px; accent-color: var(--paper); }
+  #coverPreview { width: 96px; height: 96px; object-fit: cover; border-radius: 3px; margin-top: 4px; }
+  .note { margin: 0; color: var(--muted); font-size: 14px; }
+  .form-error { margin: 0; color: var(--danger); font-size: 14px; }
+  .actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 4px; }
+
+  /* ---------- toast ---------- */
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translate(-50%, 20px);
+    background: var(--paper);
+    color: var(--paper-ink);
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 500;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s, transform .2s;
+    max-width: calc(100vw - 32px);
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .toast.error { background: var(--danger); color: #3a1008; }
+
+  @media (max-width: 560px) {
+    .tools { margin-left: 0; width: 100%; }
+    .search { flex: 1 1 100%; }
+    .search input { width: 100%; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+    .row { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card, .toast { transition: none; }
+    .card:hover { transform: none; }
+    dialog[open] { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1 class="brand">Vinyl Vault</h1>
+  <p class="count" id="count" aria-live="polite"></p>
+  <div class="tools">
+    <label class="search">
+      <span class="sr">Search albums</span>
+      <input id="search" type="search" placeholder="Search title or genre" autocomplete="off">
+    </label>
+    <button class="btn primary" id="addBtn" type="button">Add album</button>
+  </div>
+</header>
+
+<main>
+  <div id="status" class="status" hidden></div>
+  <section id="grid" class="grid" aria-label="Albums"></section>
+</main>
+
+<dialog id="dlg" aria-labelledby="dlgTitle">
+  <form id="form" novalidate>
+    <h2 id="dlgTitle">Add album</h2>
+
+    <div class="field">
+      <label for="fTitle">Title</label>
+      <input id="fTitle" type="text" maxlength="200" required autocomplete="off">
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label for="fTracks">Tracks</label>
+        <input id="fTracks" type="number" min="1" step="1" required>
+      </div>
+      <label class="check">
+        <input id="fExplicit" type="checkbox">
+        <span>Explicit lyrics</span>
+      </label>
+    </div>
+
+    <div class="field">
+      <label for="fGenres">Genres</label>
+      <input id="fGenres" type="text" placeholder="Rock, Pop" required autocomplete="off">
+      <small>Separate genres with commas.</small>
+    </div>
+
+    <div class="field" id="coverField">
+      <label for="fCover">Cover image</label>
+      <input id="fCover" type="file" accept="image/*">
+      <img id="coverPreview" alt="Selected cover preview" hidden>
+    </div>
+    <p class="note" id="coverNote" hidden>The cover stays the same. Delete and re-add the album to change it.</p>
+
+    <p class="form-error" id="formError" role="alert" hidden></p>
+
+    <div class="actions">
+      <button class="btn ghost" id="cancelBtn" type="button">Cancel</button>
+      <button class="btn primary" id="saveBtn" type="submit">Add album</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+  // Where your FastAPI server lives. When you deploy it (e.g. on Render),
+  // replace this with the public URL, such as "https://vinyl-vault.onrender.com".
+  const API_BASE = "http://127.0.0.1:8000";
+  const DEFAULT_COLOR = "#333333";
+
+  const $ = (id) => document.getElementById(id);
+  const grid = $("grid"), statusBox = $("status"), countEl = $("count");
+  const dlg = $("dlg"), form = $("form"), toastEl = $("toast");
+
+  let albums = [];
+  let editingId = null;
+  let toastTimer = null;
+
+  /* ---------- tiny DOM helper (builds nodes with textContent, so album text can never inject HTML) ---------- */
+  function h(tag, props = {}, ...kids) {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(props)) {
+      if (k === "class") el.className = v;
+      else if (k === "text") el.textContent = v;
+      else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+      else if (v !== false && v != null) el.setAttribute(k, v === true ? "" : v);
+    }
+    for (const kid of kids.flat()) if (kid != null) el.append(kid);
+    return el;
+  }
+
+  /* ---------- API ---------- */
+  function describeError(detail) {
+    if (Array.isArray(detail)) {
+      return detail.map((d) => `${(d.loc || []).slice(-1)[0] || "field"}: ${d.msg}`).join("; ");
+    }
+    return typeof detail === "string" ? detail : "Something went wrong.";
+  }
+
+  async function api(path, options = {}) {
+    let res;
+    try {
+      res = await fetch(API_BASE + path, options);
+    } catch (err) {
+      const e = new Error("Can't reach the API.");
+      e.network = true;
+      throw e;
+    }
+    if (!res.ok) {
+      let detail;
+      try { detail = (await res.json()).detail; } catch (_) { /* not JSON */ }
+      throw new Error(describeError(detail));
+    }
+    return res.json();
+  }
+
+  /* ---------- card colours ---------- */
+  function parseHex(hex) {
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
+    return m ? [0, 2, 4].map((i) => parseInt(m[1].slice(i, i + 2), 16)) : null;
+  }
+
+  // WCAG relative luminance
+  function luminance([r, g, b]) {
+    const f = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+  }
+
+  // Card background = the album's dominant colour; text = white or near-black, whichever contrasts more.
+  function cardColors(hex) {
+    const rgb = parseHex(hex) || parseHex(DEFAULT_COLOR);
+    const L = luminance(rgb);
+    const ink = [20, 22, 31];
+    const contrastWhite = 1.05 / (L + 0.05);
+    const contrastInk = (L + 0.05) / (luminance(ink) + 0.05);
+    return {
+      bg: `rgb(${rgb.join(", ")})`,
+      fg: contrastWhite >= contrastInk ? "#ffffff" : "#14161f",
+    };
+  }
+
+  function applyColors(el, hex) {
+    const { bg, fg } = cardColors(hex);
+    el.style.setProperty("--card-bg", bg);
+    el.style.setProperty("--card-fg", fg);
+  }
+
+  /* ---------- rendering ---------- */
+  function albumEl(a) {
+    const n = a.track_count;
+    const color = a.dominant_color || DEFAULT_COLOR;
+
+    const el = h("article", { class: "card", "data-id": String(a.id) },
+      a.cover_image_url
+        ? h("img", { class: "cover", src: a.cover_image_url, alt: `Cover of ${a.title}`, loading: "lazy" })
+        : h("div", { class: "cover nocover", text: "No cover" }),
+      h("h2", { class: "title", text: a.title }),
+      h("p", { class: "facts" },
+        h("span", { text: `${n} ${n === 1 ? "track" : "tracks"}` }),
+        a.is_explicit ? h("span", { class: "badge", text: "Explicit" }) : null
+      ),
+      h("ul", { class: "chips", "aria-label": "Genres" }, (a.genres || []).map((g) => h("li", { text: g }))),
+      color === DEFAULT_COLOR ? h("p", { class: "pending", text: "Reading cover color…" }) : null,
+      h("div", { class: "row-actions" },
+        h("button", { class: "link", type: "button", onclick: () => openDialog(a), "aria-label": `Edit ${a.title}`, text: "Edit" }),
+        h("button", { class: "link", type: "button", onclick: () => removeAlbum(a), "aria-label": `Delete ${a.title}`, text: "Delete" })
+      )
+    );
+    applyColors(el, color);
+    return el;
+  }
+
+  function visibleAlbums() {
+    const q = $("search").value.trim().toLowerCase();
+    if (!q) return albums;
+    return albums.filter((a) =>
+      a.title.toLowerCase().includes(q) || (a.genres || []).some((g) => g.toLowerCase().includes(q))
+    );
+  }
+
+  function showStatus(title, body, actionLabel, onAction) {
+    statusBox.replaceChildren(
+      h("h2", { text: title }),
+      typeof body === "string" ? h("p", { text: body }) : body,
+      actionLabel ? h("button", { class: "btn primary", type: "button", onclick: onAction, text: actionLabel }) : null
+    );
+    statusBox.hidden = false;
+  }
+
+  function render() {
+    const list = visibleAlbums();
+    grid.replaceChildren(...list.map(albumEl));
+    countEl.textContent = albums.length === 0 ? "" : `${albums.length} ${albums.length === 1 ? "album" : "albums"}`;
+
+    if (albums.length === 0) {
+      showStatus("Your vault is empty", "Add your first album with a cover image and it will appear here.", "Add album", () => openDialog(null));
+    } else if (list.length === 0) {
+      showStatus("No matches", "No album matches that search. Try a different title or genre.");
+    } else {
+      statusBox.hidden = true;
+    }
+  }
+
+  function toast(message, isError = false) {
+    toastEl.textContent = message;
+    toastEl.classList.toggle("error", isError);
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove("show"), 3200);
+  }
+
+  /* ---------- loading ---------- */
+  async function loadAlbums() {
+    try {
+      albums = await api("/api/albums");
+      render();
+    } catch (err) {
+      grid.replaceChildren();
+      countEl.textContent = "";
+      if (err.network) {
+        showStatus(
+          "Can't reach the API",
+          h("p", {}, "Nothing answered at ", h("code", { text: API_BASE }), ". Start the server with ", h("code", { text: "uvicorn main:app --reload" }), " and try again."),
+          "Try again",
+          loadAlbums
+        );
+      } else {
+        showStatus("Couldn't load albums", err.message, "Try again", loadAlbums);
+      }
+    }
+  }
+
+  // The dominant colour is filled in by a background task a moment after upload,
+  // so check back a few times until it changes from the default. The card is
+  // updated in place so its background fades to the new colour.
+  function watchColor(id, tries = 0) {
+    if (tries >= 8) return;
+    setTimeout(async () => {
+      try {
+        const fresh = await api(`/api/albums/${id}`);
+        if (fresh.dominant_color && fresh.dominant_color !== DEFAULT_COLOR) {
+          const i = albums.findIndex((a) => a.id === id);
+          if (i !== -1) albums[i] = fresh;
+          const card = grid.querySelector(`[data-id="${id}"]`);
+          if (card) {
+            applyColors(card, fresh.dominant_color);
+            const pending = card.querySelector(".pending");
+            if (pending) pending.remove();
+          }
+          return;
+        }
+      } catch (_) { /* album may have been deleted meanwhile */ }
+      watchColor(id, tries + 1);
+    }, 1500);
+  }
+
+  /* ---------- dialog ---------- */
+  function parseGenres(text) {
+    return text.split(",").map((g) => g.trim()).filter(Boolean);
+  }
+
+  function showFormError(message) {
+    const el = $("formError");
+    el.textContent = message || "";
+    el.hidden = !message;
+  }
+
+  function openDialog(album) {
+    editingId = album ? album.id : null;
+    form.reset();
+    showFormError("");
+    $("coverPreview").hidden = true;
+
+    $("dlgTitle").textContent = album ? "Edit album" : "Add album";
+    $("saveBtn").textContent = album ? "Save changes" : "Add album";
+    $("coverField").hidden = !!album;
+    $("coverNote").hidden = !album;
+
+    if (album) {
+      $("fTitle").value = album.title;
+      $("fTracks").value = album.track_count;
+      $("fExplicit").checked = !!album.is_explicit;
+      $("fGenres").value = (album.genres || []).join(", ");
+    }
+    dlg.showModal();
+    $("fTitle").focus();
+  }
+
+  $("fCover").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    const img = $("coverPreview");
+    if (file) {
+      img.src = URL.createObjectURL(file);
+      img.hidden = false;
+    } else {
+      img.hidden = true;
+    }
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    showFormError("");
+
+    const title = $("fTitle").value.trim();
+    const tracks = Number.parseInt($("fTracks").value, 10);
+    const genres = parseGenres($("fGenres").value);
+    const file = $("fCover").files[0];
+
+    if (!title) return showFormError("Enter a title.");
+    if (!Number.isInteger(tracks) || tracks < 1) return showFormError("Tracks must be a whole number, 1 or more.");
+    if (genres.length === 0) return showFormError("Add at least one genre, separated by commas.");
+    if (editingId === null && !file) return showFormError("Choose a cover image.");
+
+    const saveBtn = $("saveBtn");
+    const label = saveBtn.textContent;
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving…";
+
+    try {
+      if (editingId === null) {
+        const body = new FormData();
+        body.append("title", title);
+        body.append("track_count", String(tracks));
+        body.append("is_explicit", $("fExplicit").checked ? "true" : "false");
+        body.append("genres_json", JSON.stringify(genres));
+        body.append("file", file);
+        const created = await api("/api/albums", { method: "POST", body });
+        albums.unshift(created);
+        dlg.close();
+        render();
+        toast(`Added “${created.title}”`);
+        watchColor(created.id);
+      } else {
+        const updated = await api(`/api/albums/${editingId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, track_count: tracks, is_explicit: $("fExplicit").checked, genres }),
+        });
+        const i = albums.findIndex((a) => a.id === editingId);
+        if (i !== -1) albums[i] = updated;
+        dlg.close();
+        render();
+        toast("Saved changes");
+      }
+    } catch (err) {
+      showFormError(err.network ? `Can't reach the API at ${API_BASE}. Is the server running?` : err.message);
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = label;
+    }
+  });
+
+  $("cancelBtn").addEventListener("click", () => dlg.close());
+  dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });   // click on the backdrop
+
+  /* ---------- delete ---------- */
+  async function removeAlbum(a) {
+    if (!window.confirm(`Delete “${a.title}”? This can't be undone.`)) return;
+    try {
+      await api(`/api/albums/${a.id}`, { method: "DELETE" });
+      albums = albums.filter((x) => x.id !== a.id);
+      render();
+      toast(`Deleted “${a.title}”`);
+    } catch (err) {
+      toast(err.network ? "Can't reach the API. Is the server running?" : err.message, true);
+    }
+  }
+
+  /* ---------- wire up ---------- */
+  $("addBtn").addEventListener("click", () => openDialog(null));
+  $("search").addEventListener("input", render);
+  loadAlbums();
+</script>
+</body>
+</html>
