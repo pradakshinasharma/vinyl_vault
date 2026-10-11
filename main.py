@@ -15,7 +15,10 @@ from fastapi import (
     HTTPException,
     Depends,
 )
+from pathlib import Path
+
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import ValidationError
 
 from database import AlbumModel, SessionLocal, get_db, init_db
@@ -43,9 +46,21 @@ app.add_middleware(
 )
 
 
-@app.get("/")
+BASE_DIR = Path(__file__).resolve().parent
+
+
+@app.get("/health")
 def health():
     return {"status": "ok", "service": "Vinyl Vault API"}
+
+
+# Serve the frontend from the same server, so one Render address gives you the page AND the API.
+@app.get("/", include_in_schema=False)
+def home():
+    page = BASE_DIR / "index.html"
+    if page.exists():
+        return FileResponse(page)
+    return {"status": "ok", "service": "Vinyl Vault API", "note": "index.html not found next to main.py"}
 
 
 # 1. LIST (Read All)

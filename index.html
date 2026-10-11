@@ -326,9 +326,10 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
-  // Where your FastAPI server lives. When you deploy it (e.g. on Render),
-  // replace this with the public URL, such as "https://vinyl-vault.onrender.com".
-  const API_BASE = "http://127.0.0.1:8000";
+  // Where the API lives. When this page is served by the backend itself (locally via
+  // http://127.0.0.1:8000 or on Render), "" means "same address as this page".
+  // Only when you double-click the file (file://) does it fall back to the local server.
+  const API_BASE = location.protocol === "file:" ? "http://127.0.0.1:8000" : "";
   const DEFAULT_COLOR = "#333333";
 
   const $ = (id) => document.getElementById(id);
