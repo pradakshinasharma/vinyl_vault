@@ -8,12 +8,20 @@ DATABASE_URL = os.getenv(
     "postgresql://postgres:password@localhost:5432/postgres",
 )
 
-# Normalise the URL scheme and force the psycopg2 driver (the one in requirements.txt).
-# Handles "postgres://", "postgresql://" and "postgresql+psycopg://" alike.
-for prefix in ("postgres://", "postgresql://", "postgresql+psycopg://"):
-    if DATABASE_URL.startswith(prefix):
-        DATABASE_URL = "postgresql+psycopg2://" + DATABASE_URL[len(prefix):]
-        break
+def normalize_database_url(url: str) -> str:
+    """Normalise the URL scheme and force the psycopg2 driver (the one in requirements.txt).
+
+    Handles "postgres://", "postgresql://" and "postgresql+psycopg://" alike, so connection
+    strings copied from Supabase, Neon or any other host work unchanged.
+    """
+    url = url.strip().strip("\"'")
+    for prefix in ("postgres://", "postgresql://", "postgresql+psycopg://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg2://" + url[len(prefix):]
+    return url
+
+
+DATABASE_URL = normalize_database_url(DATABASE_URL)
 
 # pool_pre_ping avoids "connection closed" errors after idle periods
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)

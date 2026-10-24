@@ -23,7 +23,7 @@ from pydantic import ValidationError
 
 from database import AlbumModel, SessionLocal, get_db, init_db
 from schemas import AlbumCreate, AlbumUpdate, AlbumResponse
-from storage import upload_file_to_supabase
+from storage import upload_cover
 from worker import extract_dominant_color_task
 
 
@@ -119,9 +119,9 @@ def create_album(
     if not (file.content_type or "").startswith("image/"):
         raise HTTPException(status_code=400, detail="Cover must be an image file")
 
-    # Upload file to Supabase Storage
+    # Upload the cover to the configured storage backend (Supabase Storage or an S3-compatible bucket)
     try:
-        cover_url = upload_file_to_supabase(file)
+        cover_url = upload_cover(file)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Cover upload failed: {e}")
 
