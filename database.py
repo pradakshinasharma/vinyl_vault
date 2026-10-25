@@ -15,6 +15,12 @@ def normalize_database_url(url: str) -> str:
     strings copied from Supabase, Neon or any other host work unchanged.
     """
     url = url.strip().strip("\"'")
+    # Tolerate common copy-paste slips: "psql 'postgresql://...'" (Neon) or "DATABASE_URL=postgresql://..."
+    if "://" in url and not url.startswith(("postgres", "sqlite")):
+        url = url[url.index("://") - len(url.split("://")[0].split()[-1]):]
+    if url.upper().startswith("DATABASE_URL="):
+        url = url.split("=", 1)[1]
+    url = url.strip().strip("\"'")
     for prefix in ("postgres://", "postgresql://", "postgresql+psycopg://"):
         if url.startswith(prefix):
             return "postgresql+psycopg2://" + url[len(prefix):]
