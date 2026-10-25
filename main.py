@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 import json
 from typing import List
@@ -21,17 +22,48 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import ValidationError
 
-from database import AlbumModel, SessionLocal, get_db, init_db
+from sqlalchemy import text
+
+from database import AlbumModel, SessionLocal, engine, get_db, init_db
 from schemas import AlbumCreate, AlbumUpdate, AlbumResponse
 from storage import upload_cover
 from worker import extract_dominant_color_task
 
 
+async def _try_init_db(attempt: int) -> bool:
+    """Create the "albums" table if needed. Returns False (and logs why) instead of crashing."""
+    try:
+        await asyncio.to_thread(init_db)
+        print("[startup] database ready", flush=True)
+        return True
+    except Exception as err:
+        message = str(err).strip()
+        first_line = message.splitlines()[0][:300] if message else ""
+        print(f"[startup] database not ready (attempt {attempt}): {type(err).__name__}: {first_line}", flush=True)
+        return False
+
+
+async def _retry_init_db():
+    """Keep trying in the background, e.g. while a sleeping Neon database wakes up."""
+    attempt = 1
+    while True:
+        await asyncio.sleep(min(5 * attempt, 30))
+        attempt += 1
+        if await _try_init_db(attempt):
+            return
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create the "albums" table on startup if it doesn't exist
-    init_db()
+    # Normal case: the database answers straight away and the table is ready before any request.
+    # If it doesn't, keep the server running (so the platform's health check passes and the logs
+    # show the real reason) and keep retrying in the background.
+    retry_task = None
+    if not await _try_init_db(1):
+        retry_task = asyncio.create_task(_retry_init_db())
     yield
+    if retry_task:
+        retry_task.cancel()
 
 
 app = FastAPI(title="Vinyl Vault API", lifespan=lifespan)
@@ -52,6 +84,17 @@ BASE_DIR = Path(__file__).resolve().parent
 @app.get("/health")
 def health():
     return {"status": "ok", "service": "Vinyl Vault API"}
+
+
+@app.get("/health/db")
+def health_db():
+    """Quick check that the app can reach its database (shows only the error type, never secrets)."""
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return {"database": "ok"}
+    except Exception as err:
+        raise HTTPException(status_code=503, detail=f"database error: {type(err).__name__}")
 
 
 # Serve the frontend from the same server, so one Render address gives you the page AND the API.
